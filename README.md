@@ -8,28 +8,7 @@
 A web-based application that makes machine learning model predictions interpretable and explainable using SHAP and LIME techniques.
 
 ## Team Members
-- **Enzo Nkouekam** - Team Leader, Documentation (ynkoueka@kennesaw.edu)
-- **Franck Tayo** - Developer (ftayogou@students.kennesaw.edu)  
-- **Gloria Kouam** - Developer (gkouamfa@students.kennesaw.edu)
-- **Tex Yonzo** - Documentation (tyonzoya@students.kennesaw.edu)
-
-**Supervisor:** Prof. Sharon Perry (sperry46@kennesaw.edu)
-
-## Technology Stack
-- **Backend:** Python, Flask, PostgreSQL
-- **Frontend:** HTML5, CSS3, JavaScript, Bootstrap
-- **ML Libraries:** scikit-learn, SHAP, LIME, XGBoost
-- **Visualization:** D3.js, Plotly.js
-
-## Quick Start
-
-### Prerequisites
-- Python 3.8 or higher
-- PostgreSQL 12+
-- Git
-
-### Installation
-```bash
+- **Enzo Nkouekam** - Team Leader, Documentation 
 # Clone repository
 git clone https://github.com/Intell-org23/SP105-AIML-Explainer.git
 cd SP105-AIML-Explainer
@@ -56,7 +35,6 @@ python scripts/setup_db.py
 # Run development server
 python src/app.py
 
-cat > README.md << 'EOF'
 # SP-105 AIML Explainer - Visualizing Black-Box Models
 
 **Course:** 4850 Senior Project  
@@ -67,66 +45,8 @@ cat > README.md << 'EOF'
 A web-based application that makes machine learning model predictions interpretable and explainable using SHAP and LIME techniques.
 
 ## Team Members
+- **Franck Tayo** - Lead Developer (ftayogou@students.kennesaw.edu) 
 - **Enzo Nkouekam** - Team Leader, Documentation (ynkoueka@kennesaw.edu)
-- **Franck Tayo** - Developer (ftayogou@students.kennesaw.edu)  
-- **Gloria Kouam** - Developer (gkouamfa@students.kennesaw.edu)
-- **Tex Yonzo** - Documentation (tyonzoya@students.kennesaw.edu)
-
-**Supervisor:** Prof. Sharon Perry (sperry46@kennesaw.edu)
-
-## Technology Stack
-- **Backend:** Python, Flask, PostgreSQL
-- **Frontend:** HTML5, CSS3, JavaScript, Bootstrap
-- **ML Libraries:** scikit-learn, SHAP, LIME, XGBoost
-- **Visualization:** D3.js, Plotly.js
-
-## Quick Start
-
-### Prerequisites
-- Python 3.8 or higher
-- PostgreSQL 12+
-- Git
-
-### Installation
-```bash
-# Clone repository
-git clone https://github.com/Intell-org23/SP105-AIML-Explainer.git
-cd SP105-AIML-Explainer
-
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-# On Windows:
-venv\Scripts\activate
-# On macOS/Linux:
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env file with your database credentials
-
-# Set up database
-python scripts/setup_db.py
-
-# Run development server
-python src/app.py
-cat > README.md << 'EOF'
-# SP-105 AIML Explainer - Visualizing Black-Box Models
-
-**Course:** 4850 Senior Project  
-**Semester:** Fall 2025  
-**Team:** SP-105 Visualizing Black-Box Models ALL  
-
-## Project Overview
-A web-based application that makes machine learning model predictions interpretable and explainable using SHAP and LIME techniques.
-
-## Team Members
-- **Enzo Nkouekam** - Team Leader, Documentation (ynkoueka@kennesaw.edu)
-- **Franck Tayo** - Developer (ftayogou@students.kennesaw.edu)  
 - **Gloria Kouam** - Developer (gkouamfa@students.kennesaw.edu)
 - **Tex Yonzo** - Documentation (tyonzoya@students.kennesaw.edu)
 
@@ -194,13 +114,12 @@ SP105-AIML-Explainer/
 â””â”€â”€ deployment/              # Deployment configurations
 Features
 
-í³Š Interactive ML model explanations using SHAP and LIME
-í³ˆ Multiple visualization types (bar plots, waterfall charts, scatter plots)
-í´ Secure user authentication and session management
-í³ CSV dataset upload and processing
-í´– Support for multiple ML models (Random Forest, XGBoost, custom models)
-í³‹ Export capabilities (PDF, PNG, JSON)
-í´— Shareable explanation links
+-->Interactive ML model explanations using SHAP and LIME
+- ðŸ”’ Secure user authentication and session management
+-->CSV dataset upload and processing
+-->Support for multiple ML models (Random Forest, XGBoost, custom models)
+-->Export capabilities (PDF, PNG, JSON)
+-->Shareable explanation links
 
 Development Workflow
 Branch Naming Convention
