@@ -7,8 +7,6 @@
 ## Project Overview
 A web-based application that makes machine learning model predictions interpretable and explainable using SHAP and LIME techniques.
 
-## Team Members
-- **Enzo Nkouekam** - Team Leader, Documentation 
 # Clone repository
 git clone https://github.com/Intell-org23/SP105-AIML-Explainer.git
 cd SP105-AIML-Explainer
