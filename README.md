@@ -24,8 +24,8 @@ python -m venv venv
 - Global SHAP explanations with summary plots
 - Local SHAP explanations with force plots
 - Interactive web interface with real-time visualization
+[Proof of concept](<../Proof of concept 1.pdf>)
 
-![Proof of concept](image.png)
 
 ### ✅ Completed (Weeks 3-4)
 - CSV file upload functionality (up to 100MB)
