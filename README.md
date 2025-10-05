@@ -16,6 +16,27 @@ cd SP105-AIML-Explainer
 # Create virtual environment
 python -m venv venv
 
+## Current Status
+
+### ✅ Completed (Weeks 1-2)
+- Working Flask application with SHAP integration
+- Random Forest model training on Iris dataset
+- Global SHAP explanations with summary plots
+- Local SHAP explanations with force plots
+- Interactive web interface with real-time visualization
+
+![Proof of concept](image.png)
+
+### 🚧 In Progress (Weeks 3-4)
+- CSV file upload functionality
+- Custom dataset support
+- Data validation and preprocessing
+
+### 📋 Planned
+- LIME integration
+- Model upload capability
+- User authentication
+
 # Activate virtual environment
 # On Windows:
 venv\Scripts\activate

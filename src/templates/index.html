@@ -1,113 +1,250 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SP-105 AIML Explainer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        .btn-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+        }
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            color: white;
+        }
+        .result-img {
+            max-width: 100%;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .loading {
+            display: none;
+        }
+        .spinner-border {
+            width: 2rem;
+            height: 2rem;
+        }
+        .feature-importance {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .progress-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="text-center text-white mb-4">
+            <h1 class="display-4 fw-bold">🤖 SP-105 AIML Explainer</h1>
+            <p class="lead">Visualizing Black-Box Models with SHAP</p>
+        </div>
 
-{% block title %}Home - SP-105 AIML Explainer{% endblock %}
-
-{% block content %}
-<div class="row">
-    <div class="col-md-12">
-        <!-- Hero Section -->
-        <div class="jumbotron bg-primary text-white p-5 rounded mb-5">
-            <div class="container text-center">
-                <h1 class="display-4">SP-105 AIML Explainer</h1>
-                <p class="lead">Visualizing Black-Box Machine Learning Models</p>
-                <p class="mb-4">Make your ML models interpretable with SHAP and LIME explanations</p>
-                <a class="btn btn-light btn-lg" href="#upload" role="button">Get Started</a>
+        <!-- Step 1: Train Model -->
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">📊 Step 1: Train Model</h3>
+                <p class="text-muted">Train a Random Forest classifier on the Iris dataset</p>
+                <button id="trainBtn" class="btn btn-custom">Train Model</button>
+                <div id="trainLoading" class="loading mt-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span class="ms-2">Training model...</span>
+                </div>
+                <div id="trainResult" class="mt-3"></div>
             </div>
         </div>
 
-        <!-- Features Section -->
-        <div class="row mb-5">
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body text-center">
-                        <i class="fas fa-chart-bar fa-3x text-primary mb-3"></i>
-                        <h5 class="card-title">SHAP Explanations</h5>
-                        <p class="card-text">Global and local explanations using Shapley values for comprehensive model understanding.</p>
+        <!-- Step 2: Generate SHAP Explanations -->
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">🔍 Step 2: Generate SHAP Explanations</h3>
+                <p class="text-muted">View global feature importance using SHAP values</p>
+                <button id="shapBtn" class="btn btn-custom" disabled>Generate SHAP Plot</button>
+                <div id="shapLoading" class="loading mt-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
+                    <span class="ms-2">Generating explanations...</span>
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body text-center">
-                        <i class="fas fa-search fa-3x text-primary mb-3"></i>
-                        <h5 class="card-title">LIME Interpretability</h5>
-                        <p class="card-text">Local interpretable model-agnostic explanations for individual predictions.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body text-center">
-                        <i class="fas fa-download fa-3x text-primary mb-3"></i>
-                        <h5 class="card-title">Export Results</h5>
-                        <p class="card-text">Export your explanations as PDF, PNG, or JSON for sharing and documentation.</p>
-                    </div>
-                </div>
+                <div id="shapResult" class="mt-3"></div>
             </div>
         </div>
 
-        <!-- Upload Section -->
-        <div id="upload" class="row mb-5">
-            <div class="col-md-12">
-                <h2 class="text-center mb-4">Upload Your Dataset</h2>
-                <div class="card">
-                    <div class="card-body">
-                        <div class="upload-area p-5 text-center border border-dashed rounded">
-                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
-                            <h4>Drag and drop your CSV file here</h4>
-                            <p class="text-muted">or click to browse files</p>
-                            <input type="file" id="fileInput" accept=".csv" style="display: none;">
-                            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click();">
-                                Choose File
-                            </button>
-                        </div>
-                        <div id="uploadStatus" class="mt-3" style="display: none;"></div>
+        <!-- Step 3: Explain Single Instance -->
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">🎯 Step 3: Explain Single Prediction</h3>
+                <p class="text-muted">See SHAP force plot for individual prediction</p>
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <label for="instanceIdx" class="form-label">Select Instance (0-29):</label>
+                        <input type="number" class="form-control" id="instanceIdx" min="0" max="29" value="0">
+                    </div>
+                    <div class="col-md-6">
+                        <button id="instanceBtn" class="btn btn-custom mt-3" disabled>Explain Instance</button>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- About Section -->
-        <div id="about" class="row">
-            <div class="col-md-12">
-                <h2 class="text-center mb-4">About This Project</h2>
-                <div class="row">
-                    <div class="col-md-8 mx-auto">
-                        <p class="text-center lead">
-                            This project is developed by the SP-105 team at Kennesaw State University 
-                            as part of the Senior Project course (Fall 2025). Our goal is to make 
-                            machine learning models more interpretable and explainable through 
-                            advanced visualization techniques.
-                        </p>
-                        
-                        <h4>Team Members:</h4>
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item">
-                                <strong>Enzo Nkouekam</strong> - Team Leader, Documentation
-                            </li>
-                            <li class="list-group-item">
-                                <strong>Franck Tayo</strong> - Developer
-                            </li>
-                            <li class="list-group-item">
-                                <strong>Gloria Kouam</strong> - Developer
-                            </li>
-                            <li class="list-group-item">
-                                <strong>Tex Yonzo</strong> - Documentation
-                            </li>
-                        </ul>
-                        
-                        <p class="mt-3 text-center">
-                            <strong>Supervisor:</strong> Prof. Sharon Perry
-                        </p>
+                <div id="instanceLoading" class="loading mt-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
+                    <span class="ms-2">Generating explanation...</span>
                 </div>
+                <div id="instanceResult" class="mt-3"></div>
             </div>
         </div>
     </div>
-</div>
-{% endblock %}
 
-{% block scripts %}
-<!-- Font Awesome for icons -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
-{% endblock %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Train Model
+        document.getElementById('trainBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('trainBtn');
+            const loading = document.getElementById('trainLoading');
+            const result = document.getElementById('trainResult');
+            
+            btn.disabled = true;
+            loading.style.display = 'block';
+            result.innerHTML = '';
+            
+            try {
+                const response = await fetch('/train_model', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    result.innerHTML = `
+                        <div class="alert alert-success">
+                            <h5>✅ Model Trained Successfully!</h5>
+                            <p><strong>Accuracy:</strong> ${(data.accuracy * 100).toFixed(2)}%</p>
+                            <p><strong>Training samples:</strong> ${data.n_samples}</p>
+                            <p><strong>Features:</strong> ${data.n_features}</p>
+                        </div>
+                    `;
+                    document.getElementById('shapBtn').disabled = false;
+                    document.getElementById('instanceBtn').disabled = false;
+                } else {
+                    result.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            } finally {
+                loading.style.display = 'none';
+                btn.disabled = false;
+            }
+        });
+
+        // Generate SHAP
+        document.getElementById('shapBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('shapBtn');
+            const loading = document.getElementById('shapLoading');
+            const result = document.getElementById('shapResult');
+            
+            btn.disabled = true;
+            loading.style.display = 'block';
+            result.innerHTML = '';
+            
+            try {
+                const response = await fetch('/generate_shap', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    let importanceHTML = '<div class="feature-importance"><h5>Feature Importance:</h5><ul class="list-group">';
+                    data.feature_importance.forEach(item => {
+                        const percentage = (item.importance * 100).toFixed(2);
+                        importanceHTML += `
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                ${item.feature}
+                                <span class="badge bg-primary rounded-pill">${percentage}%</span>
+                            </li>
+                        `;
+                    });
+                    importanceHTML += '</ul></div>';
+                    
+                    result.innerHTML = `
+                        <div class="alert alert-success">
+                            <h5>✅ SHAP Explanations Generated!</h5>
+                            <p><strong>Samples explained:</strong> ${data.n_samples_explained}</p>
+                        </div>
+                        ${importanceHTML}
+                        <img src="data:image/png;base64,${data.plot_image}" class="result-img" alt="SHAP Summary Plot">
+                    `;
+                } else {
+                    result.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            } finally {
+                loading.style.display = 'none';
+                btn.disabled = false;
+            }
+        });
+
+        // Explain Instance
+        document.getElementById('instanceBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('instanceBtn');
+            const loading = document.getElementById('instanceLoading');
+            const result = document.getElementById('instanceResult');
+            const idx = document.getElementById('instanceIdx').value;
+            
+            btn.disabled = true;
+            loading.style.display = 'block';
+            result.innerHTML = '';
+            
+            try {
+                const response = await fetch('/explain_instance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ instance_idx: parseInt(idx) })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const probaHTML = data.prediction_proba.map((p, i) => 
+                        `<div class="progress-bar" style="width: ${(p*100).toFixed(1)}%">${(p*100).toFixed(1)}% Class ${i}</div>`
+                    ).join('');
+                    
+                    result.innerHTML = `
+                        <div class="alert alert-success">
+                            <h5>✅ Instance Explanation Generated!</h5>
+                            <p><strong>Predicted Class:</strong> ${data.prediction}</p>
+                            <div class="progress" style="height: 30px;">
+                                ${probaHTML}
+                            </div>
+                        </div>
+                        <img src="data:image/png;base64,${data.plot_image}" class="result-img" alt="SHAP Force Plot">
+                    `;
+                } else {
+                    result.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            } finally {
+                loading.style.display = 'none';
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

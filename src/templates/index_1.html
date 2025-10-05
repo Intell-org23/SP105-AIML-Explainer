@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Home - SP-105 AIML Explainer{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <!-- Hero Section -->
+        <div class="jumbotron bg-primary text-white p-5 rounded mb-5">
+            <div class="container text-center">
+                <h1 class="display-4">SP-105 AIML Explainer</h1>
+                <p class="lead">Visualizing Black-Box Machine Learning Models</p>
+                <p class="mb-4">Make your ML models interpretable with SHAP and LIME explanations</p>
+                <a class="btn btn-light btn-lg" href="#upload" role="button">Get Started</a>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="row mb-5">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-chart-bar fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">SHAP Explanations</h5>
+                        <p class="card-text">Global and local explanations using Shapley values for comprehensive model understanding.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-search fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">LIME Interpretability</h5>
+                        <p class="card-text">Local interpretable model-agnostic explanations for individual predictions.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-download fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">Export Results</h5>
+                        <p class="card-text">Export your explanations as PDF, PNG, or JSON for sharing and documentation.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div id="upload" class="row mb-5">
+            <div class="col-md-12">
+                <h2 class="text-center mb-4">Upload Your Dataset</h2>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="upload-area p-5 text-center border border-dashed rounded">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                            <h4>Drag and drop your CSV file here</h4>
+                            <p class="text-muted">or click to browse files</p>
+                            <input type="file" id="fileInput" accept=".csv" style="display: none;">
+                            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click();">
+                                Choose File
+                            </button>
+                        </div>
+                        <div id="uploadStatus" class="mt-3" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- About Section -->
+        <div id="about" class="row">
+            <div class="col-md-12">
+                <h2 class="text-center mb-4">About This Project</h2>
+                <div class="row">
+                    <div class="col-md-8 mx-auto">
+                        <p class="text-center lead">
+                            This project is developed by the SP-105 team at Kennesaw State University 
+                            as part of the Senior Project course (Fall 2025). Our goal is to make 
+                            machine learning models more interpretable and explainable through 
+                            advanced visualization techniques.
+                        </p>
+                        
+                        <h4>Team Members:</h4>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <strong>Enzo Nkouekam</strong> - Team Leader, Documentation
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Franck Tayo</strong> - Developer
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Gloria Kouam</strong> - Developer
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Tex Yonzo</strong> - Documentation
+                            </li>
+                        </ul>
+                        
+                        <p class="mt-3 text-center">
+                            <strong>Supervisor:</strong> Prof. Sharon Perry
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Font Awesome for icons -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+{% endblock %}
