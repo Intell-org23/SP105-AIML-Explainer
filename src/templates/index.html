@@ -32,6 +32,10 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             color: white;
         }
+        .btn-custom:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
         .result-img {
             max-width: 100%;
             border-radius: 10px;
@@ -51,6 +55,22 @@
         .progress-bar {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
+        .file-upload-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        .file-upload-input {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .dataset-info-table {
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body>
@@ -60,16 +80,56 @@
             <p class="lead">Visualizing Black-Box Models with SHAP</p>
         </div>
 
+        <!-- Step 0: Choose Data Source -->
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">📁 Step 0: Choose Data Source</h3>
+                <p class="text-muted">Use sample Iris dataset or upload your own CSV file</p>
+                
+                <div class="btn-group" role="group">
+                    <input type="radio" class="btn-check" name="dataSource" id="sampleData" checked>
+                    <label class="btn btn-outline-primary" for="sampleData">Sample Dataset (Iris)</label>
+                    
+                    <input type="radio" class="btn-check" name="dataSource" id="customData">
+                    <label class="btn-outline-primary" for="customData">Upload CSV</label>
+                </div>
+
+                <!-- Custom Dataset Upload Section -->
+                <div id="uploadSection" style="display:none;" class="mt-3">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="fileInput" class="form-label">Select CSV File:</label>
+                            <input type="file" class="form-control" id="fileInput" accept=".csv">
+                        </div>
+                        <div class="col-md-6">
+                            <button id="uploadBtn" class="btn btn-custom mt-4" disabled>Upload Dataset</button>
+                        </div>
+                    </div>
+                    <div id="uploadLoading" class="loading mt-3">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <span class="ms-2">Uploading...</span>
+                    </div>
+                    <div id="uploadResult" class="mt-3"></div>
+                    
+                    <!-- Target Column Selection -->
+                    <div id="targetColumnSection" style="display:none;" class="mt-3">
+                        <label for="targetColumn" class="form-label">Select Target Column:</label>
+                        <select class="form-select" id="targetColumn">
+                            <option value="">Choose...</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Step 1: Train Model -->
         <div class="card">
             <div class="card-body">
                 <h3 class="card-title">📊 Step 1: Train Model</h3>
-                <p class="text-muted">Train a Random Forest classifier on the Iris dataset</p>
+                <p class="text-muted" id="trainDescription">Train a Random Forest classifier on the selected dataset</p>
                 <button id="trainBtn" class="btn btn-custom">Train Model</button>
                 <div id="trainLoading" class="loading mt-3">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
+                    <div class="spinner-border text-primary" role="status"></div>
                     <span class="ms-2">Training model...</span>
                 </div>
                 <div id="trainResult" class="mt-3"></div>
@@ -83,9 +143,7 @@
                 <p class="text-muted">View global feature importance using SHAP values</p>
                 <button id="shapBtn" class="btn btn-custom" disabled>Generate SHAP Plot</button>
                 <div id="shapLoading" class="loading mt-3">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
+                    <div class="spinner-border text-primary" role="status"></div>
                     <span class="ms-2">Generating explanations...</span>
                 </div>
                 <div id="shapResult" class="mt-3"></div>
@@ -99,7 +157,7 @@
                 <p class="text-muted">See SHAP force plot for individual prediction</p>
                 <div class="row align-items-center">
                     <div class="col-md-6">
-                        <label for="instanceIdx" class="form-label">Select Instance (0-29):</label>
+                        <label for="instanceIdx" class="form-label">Select Instance:</label>
                         <input type="number" class="form-control" id="instanceIdx" min="0" max="29" value="0">
                     </div>
                     <div class="col-md-6">
@@ -107,9 +165,7 @@
                     </div>
                 </div>
                 <div id="instanceLoading" class="loading mt-3">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
+                    <div class="spinner-border text-primary" role="status"></div>
                     <span class="ms-2">Generating explanation...</span>
                 </div>
                 <div id="instanceResult" class="mt-3"></div>
@@ -119,6 +175,83 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        let uploadedDatasetInfo = null;
+        let isCustomDataset = false;
+
+        // Toggle between sample and custom dataset
+        document.querySelectorAll('input[name="dataSource"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const uploadSection = document.getElementById('uploadSection');
+                isCustomDataset = e.target.id === 'customData';
+                uploadSection.style.display = isCustomDataset ? 'block' : 'none';
+                
+                // Reset buttons
+                document.getElementById('trainBtn').disabled = false;
+                document.getElementById('shapBtn').disabled = true;
+                document.getElementById('instanceBtn').disabled = true;
+            });
+        });
+
+        // Enable upload button when file selected
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            document.getElementById('uploadBtn').disabled = !e.target.files.length;
+        });
+
+        // Upload Dataset
+        document.getElementById('uploadBtn').addEventListener('click', async () => {
+            const fileInput = document.getElementById('fileInput');
+            const loading = document.getElementById('uploadLoading');
+            const result = document.getElementById('uploadResult');
+            const targetSection = document.getElementById('targetColumnSection');
+            const targetSelect = document.getElementById('targetColumn');
+            
+            if (!fileInput.files.length) return;
+            
+            loading.style.display = 'block';
+            result.innerHTML = '';
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            try {
+                const response = await fetch('/upload_dataset', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    uploadedDatasetInfo = data.dataset_info;
+                    
+                    // Populate target column dropdown
+                    targetSelect.innerHTML = '<option value="">Choose...</option>';
+                    data.dataset_info.columns.forEach(col => {
+                        targetSelect.innerHTML += `<option value="${col}">${col}</option>`;
+                    });
+                    
+                    // Show dataset info
+                    result.innerHTML = `
+                        <div class="alert alert-success">
+                            <h5>✅ Dataset Uploaded Successfully!</h5>
+                            <p><strong>Filename:</strong> ${data.dataset_info.filename}</p>
+                            <p><strong>Rows:</strong> ${data.dataset_info.n_rows}</p>
+                            <p><strong>Columns:</strong> ${data.dataset_info.n_columns}</p>
+                            <p><strong>Features:</strong> ${data.dataset_info.columns.join(', ')}</p>
+                        </div>
+                    `;
+                    
+                    targetSection.style.display = 'block';
+                    document.getElementById('trainBtn').disabled = false;
+                } else {
+                    result.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
         // Train Model
         document.getElementById('trainBtn').addEventListener('click', async () => {
             const btn = document.getElementById('trainBtn');
@@ -129,8 +262,27 @@
             loading.style.display = 'block';
             result.innerHTML = '';
             
+            let endpoint = '/train_model';
+            let requestBody = null;
+            
+            if (isCustomDataset) {
+                const targetColumn = document.getElementById('targetColumn').value;
+                if (!targetColumn) {
+                    result.innerHTML = '<div class="alert alert-danger">Please select a target column</div>';
+                    loading.style.display = 'none';
+                    btn.disabled = false;
+                    return;
+                }
+                endpoint = '/train_custom_model';
+                requestBody = JSON.stringify({ target_column: targetColumn });
+            }
+            
             try {
-                const response = await fetch('/train_model', { method: 'POST' });
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: requestBody ? { 'Content-Type': 'application/json' } : {},
+                    body: requestBody
+                });
                 const data = await response.json();
                 
                 if (data.success) {
@@ -140,6 +292,7 @@
                             <p><strong>Accuracy:</strong> ${(data.accuracy * 100).toFixed(2)}%</p>
                             <p><strong>Training samples:</strong> ${data.n_samples}</p>
                             <p><strong>Features:</strong> ${data.n_features}</p>
+                            ${data.features ? `<p><strong>Feature names:</strong> ${data.features.join(', ')}</p>` : ''}
                         </div>
                     `;
                     document.getElementById('shapBtn').disabled = false;
@@ -155,7 +308,7 @@
             }
         });
 
-        // Generate SHAP
+        // Generate SHAP (same as before)
         document.getElementById('shapBtn').addEventListener('click', async () => {
             const btn = document.getElementById('shapBtn');
             const loading = document.getElementById('shapLoading');
@@ -201,7 +354,7 @@
             }
         });
 
-        // Explain Instance
+        // Explain Instance (same as before)
         document.getElementById('instanceBtn').addEventListener('click', async () => {
             const btn = document.getElementById('instanceBtn');
             const loading = document.getElementById('instanceLoading');

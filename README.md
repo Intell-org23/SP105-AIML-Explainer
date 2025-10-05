@@ -27,10 +27,15 @@ python -m venv venv
 
 ![Proof of concept](image.png)
 
-### 🚧 In Progress (Weeks 3-4)
-- CSV file upload functionality
-- Custom dataset support
-- Data validation and preprocessing
+### ✅ Completed (Weeks 3-4)
+- CSV file upload functionality (up to 100MB)
+- Automatic data preprocessing for mixed data types
+- Categorical feature encoding (LabelEncoder)
+- Target column selection dropdown
+- File validation and error handling
+- Support for custom datasets with real-world data
+
+[Data set trial result](<../trial with data.pdf>)
 
 ### 📋 Planned
 - LIME integration
