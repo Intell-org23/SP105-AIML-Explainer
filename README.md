@@ -24,7 +24,9 @@ python -m venv venv
 - Global SHAP explanations with summary plots
 - Local SHAP explanations with force plots
 - Interactive web interface with real-time visualization
-[Proof of concept](<../Proof of concept 1.pdf>)
+
+[Proof of concept](<Files/Proof of concept 1.pdf>)
+
 
 
 ### ✅ Completed (Weeks 3-4)
@@ -35,7 +37,8 @@ python -m venv venv
 - File validation and error handling
 - Support for custom datasets with real-world data
 
-[Data set trial result](<../trial with data.pdf>)
+[Data set trial result](<Files/trial with data.pdf>)
+
 
 ### 📋 Planned
 - LIME integration
