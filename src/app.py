@@ -356,5 +356,51 @@ def explain_instance():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/download_results', methods=['POST'])
+def download_results():
+    """Generate downloadable text report of analysis"""
+    global model, X_train, X_test, y_train, y_test, feature_names
+    
+    if model is None:
+        return jsonify({'success': False, 'error': 'No model trained'}), 400
+    
+    try:
+        # Create simple text report
+        report = []
+        report.append("=" * 50)
+        report.append("ML MODEL ANALYSIS REPORT")
+        report.append("=" * 50)
+        report.append(f"\nModel Type: Random Forest Classifier")
+        report.append(f"Training Samples: {len(X_train)}")
+        report.append(f"Test Samples: {len(X_test)}")
+        report.append(f"Number of Features: {len(feature_names)}")
+        report.append(f"Model Accuracy: {model.score(X_test, y_test):.2%}")
+        
+        # Add feature importance
+        report.append("\n" + "=" * 50)
+        report.append("FEATURE IMPORTANCE RANKING")
+        report.append("=" * 50)
+        
+        feature_imp = model.feature_importances_
+        importance_data = [(feature_names[i], feature_imp[i]) for i in range(len(feature_names))]
+        importance_data.sort(key=lambda x: x[1], reverse=True)
+        
+        for i, (feature, importance) in enumerate(importance_data, 1):
+            report.append(f"{i}. {feature}: {importance:.4f}")
+        
+        report.append("\n" + "=" * 50)
+        
+        # Create response
+        report_text = "\n".join(report)
+        
+        return jsonify({
+            'success': True,
+            'report': report_text,
+            'filename': 'model_analysis_report.txt'
+        })
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
