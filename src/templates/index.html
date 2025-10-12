@@ -55,29 +55,13 @@
         .progress-bar {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-        .file-upload-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-        }
-        .file-upload-input {
-            font-size: 100px;
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            cursor: pointer;
-        }
-        .dataset-info-table {
-            font-size: 0.9em;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="text-center text-white mb-4">
             <h1 class="display-4 fw-bold">🤖 SP-105 AIML Explainer</h1>
-            <p class="lead">Visualizing Black-Box Models with SHAP</p>
+            <p class="lead">Visualizing Black-Box Models with SHAP and LIME</p>
         </div>
 
         <!-- Step 0: Choose Data Source -->
@@ -91,7 +75,7 @@
                     <label class="btn btn-outline-primary" for="sampleData">Sample Dataset (Iris)</label>
                     
                     <input type="radio" class="btn-check" name="dataSource" id="customData">
-                    <label class="btn-outline-primary" for="customData">Upload CSV</label>
+                    <label class="btn btn-outline-primary" for="customData">Upload CSV</label>
                 </div>
 
                 <!-- Custom Dataset Upload Section -->
@@ -126,7 +110,7 @@
         <div class="card">
             <div class="card-body">
                 <h3 class="card-title">📊 Step 1: Train Model</h3>
-                <p class="text-muted" id="trainDescription">Train a Random Forest classifier on the selected dataset</p>
+                <p class="text-muted">Train a Random Forest classifier on the selected dataset</p>
                 <button id="trainBtn" class="btn btn-custom">Train Model</button>
                 <div id="trainLoading" class="loading mt-3">
                     <div class="spinner-border text-primary" role="status"></div>
@@ -153,7 +137,7 @@
         <!-- Step 3: Explain Single Instance -->
         <div class="card">
             <div class="card-body">
-                <h3 class="card-title">🎯 Step 3: Explain Single Prediction</h3>
+                <h3 class="card-title">🎯 Step 3: Explain Single Prediction (SHAP)</h3>
                 <p class="text-muted">See SHAP force plot for individual prediction</p>
                 <div class="row align-items-center">
                     <div class="col-md-6">
@@ -161,7 +145,7 @@
                         <input type="number" class="form-control" id="instanceIdx" min="0" max="29" value="0">
                     </div>
                     <div class="col-md-6">
-                        <button id="instanceBtn" class="btn btn-custom mt-3" disabled>Explain Instance</button>
+                        <button id="instanceBtn" class="btn btn-custom mt-3" disabled>Explain with SHAP</button>
                     </div>
                 </div>
                 <div id="instanceLoading" class="loading mt-3">
@@ -171,12 +155,47 @@
                 <div id="instanceResult" class="mt-3"></div>
             </div>
         </div>
-    </div>
 
-    <!-- Step 4: Download Results -->
+        <!-- Step 4: LIME Explanations -->
         <div class="card">
             <div class="card-body">
-                <h3 class="card-title">💾 Step 4: Download Results</h3>
+                <h3 class="card-title">🔬 Step 4: Generate LIME Explanations</h3>
+                <p class="text-muted">Compare LIME local explanations with SHAP</p>
+                <button id="limeBtn" class="btn btn-custom" disabled>Generate LIME Analysis</button>
+                <div id="limeLoading" class="loading mt-3">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <span class="ms-2">Generating LIME explanations...</span>
+                </div>
+                <div id="limeResult" class="mt-3"></div>
+            </div>
+        </div>
+
+        <!-- Step 5: LIME Single Instance -->
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">🎨 Step 5: Explain Single Prediction (LIME)</h3>
+                <p class="text-muted">Detailed LIME explanation for individual prediction</p>
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <label for="limeInstanceIdx" class="form-label">Select Instance:</label>
+                        <input type="number" class="form-control" id="limeInstanceIdx" min="0" max="29" value="0">
+                    </div>
+                    <div class="col-md-6">
+                        <button id="limeInstanceBtn" class="btn btn-custom mt-3" disabled>Explain with LIME</button>
+                    </div>
+                </div>
+                <div id="limeInstanceLoading" class="loading mt-3">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <span class="ms-2">Generating LIME explanation...</span>
+                </div>
+                <div id="limeInstanceResult" class="mt-3"></div>
+            </div>
+        </div>
+
+        <!-- Step 6: Download Results -->
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">💾 Step 6: Download Results</h3>
                 <p class="text-muted">Save your analysis report as a text file</p>
                 <button id="downloadBtn" class="btn btn-custom" disabled>Download Report</button>
                 <div id="downloadLoading" class="loading mt-3">
@@ -186,6 +205,7 @@
                 <div id="downloadResult" class="mt-3"></div>
             </div>
         </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -203,6 +223,8 @@
                 document.getElementById('trainBtn').disabled = false;
                 document.getElementById('shapBtn').disabled = true;
                 document.getElementById('instanceBtn').disabled = true;
+                document.getElementById('limeBtn').disabled = true;
+                document.getElementById('limeInstanceBtn').disabled = true;
             });
         });
 
@@ -311,7 +333,9 @@
                     `;
                     document.getElementById('shapBtn').disabled = false;
                     document.getElementById('instanceBtn').disabled = false;
-                    document.getElementById('downloadBtn').disabled = false; 
+                    document.getElementById('limeBtn').disabled = false;
+                    document.getElementById('limeInstanceBtn').disabled = false;
+                    document.getElementById('downloadBtn').disabled = false;
                 } else {
                     result.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
                 }
@@ -323,7 +347,7 @@
             }
         });
 
-        // Generate SHAP (same as before)
+        // Generate SHAP
         document.getElementById('shapBtn').addEventListener('click', async () => {
             const btn = document.getElementById('shapBtn');
             const loading = document.getElementById('shapLoading');
@@ -369,7 +393,7 @@
             }
         });
 
-        // Explain Instance (same as before)
+        // Explain Instance (SHAP)
         document.getElementById('instanceBtn').addEventListener('click', async () => {
             const btn = document.getElementById('instanceBtn');
             const loading = document.getElementById('instanceLoading');
@@ -413,6 +437,99 @@
                 btn.disabled = false;
             }
         });
+
+        // Generate LIME
+        document.getElementById('limeBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('limeBtn');
+            const loading = document.getElementById('limeLoading');
+            const result = document.getElementById('limeResult');
+            
+            btn.disabled = true;
+            loading.style.display = 'block';
+            result.innerHTML = '';
+            
+            try {
+                const response = await fetch('/generate_lime', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    let importanceHTML = '<div class="feature-importance"><h5>LIME Feature Importance:</h5><ul class="list-group">';
+                    data.feature_importance.forEach(item => {
+                        const percentage = (item.importance * 100).toFixed(2);
+                        importanceHTML += `
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                ${item.feature}
+                                <span class="badge bg-success rounded-pill">${percentage}%</span>
+                            </li>
+                        `;
+                    });
+                    importanceHTML += '</ul></div>';
+                    
+                    result.innerHTML = `
+                        <div class="alert alert-success">
+                            <h5>✅ LIME Explanations Generated!</h5>
+                            <p><strong>Instances explained:</strong> ${data.n_instances_explained}</p>
+                            <p class="text-muted">LIME uses a different method than SHAP - it creates a simple model around each prediction to explain it.</p>
+                        </div>
+                        ${importanceHTML}
+                    `;
+                } else {
+                    result.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            } finally {
+                loading.style.display = 'none';
+                btn.disabled = false;
+            }
+        });
+
+        // LIME Instance Explanation
+        document.getElementById('limeInstanceBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('limeInstanceBtn');
+            const loading = document.getElementById('limeInstanceLoading');
+            const result = document.getElementById('limeInstanceResult');
+            const idx = document.getElementById('limeInstanceIdx').value;
+            
+            btn.disabled = true;
+            loading.style.display = 'block';
+            result.innerHTML = '';
+            
+            try {
+                const response = await fetch('/explain_instance_lime', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ instance_idx: parseInt(idx) })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const probaHTML = data.prediction_proba.map((p, i) => 
+                        `<div class="progress-bar bg-success" style="width: ${(p*100).toFixed(1)}%">${(p*100).toFixed(1)}% Class ${i}</div>`
+                    ).join('');
+                    
+                    result.innerHTML = `
+                        <div class="alert alert-success">
+                            <h5>✅ LIME Instance Explanation Generated!</h5>
+                            <p><strong>Predicted Class:</strong> ${data.prediction}</p>
+                            <div class="progress" style="height: 30px;">
+                                ${probaHTML}
+                            </div>
+                            <p class="mt-2 text-muted">Green bars show features that push toward this prediction (positive weight), while features with negative weights push against it.</p>
+                        </div>
+                        <img src="data:image/png;base64,${data.plot_image}" class="result-img" alt="LIME Explanation">
+                    `;
+                } else {
+                    result.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            } finally {
+                loading.style.display = 'none';
+                btn.disabled = false;
+            }
+        });
+
         // Download Results
         document.getElementById('downloadBtn').addEventListener('click', async () => {
             const btn = document.getElementById('downloadBtn');
@@ -455,9 +572,6 @@
                 btn.disabled = false;
             }
         });
-    </script>
-</body>
-</html>
     </script>
 </body>
 </html>

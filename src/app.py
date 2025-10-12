@@ -174,9 +174,7 @@ def train_custom_model():
         
         # Load dataset
         df = pd.read_csv(dataset_info['filepath'])
-        # Limit dataset size for performance
-        if len(df) > 1000:
-            df = df.sample(n=1000, random_state=42)
+        
         # Preprocess data
         X, y = preprocess_data(df, target_column)
         feature_names = X.columns.tolist()
@@ -356,51 +354,196 @@ def explain_instance():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/download_results', methods=['POST'])
-def download_results():
-    """Generate downloadable text report of analysis"""
-    global model, X_train, X_test, y_train, y_test, feature_names
+@app.route('/generate_lime', methods=['POST'])
+def generate_lime():
+    """Generate LIME explanations for the trained model"""
+    global model, X_train, X_test, feature_names
     
     if model is None:
         return jsonify({'success': False, 'error': 'No model trained'}), 400
     
     try:
-        # Create simple text report
-        report = []
-        report.append("=" * 50)
-        report.append("ML MODEL ANALYSIS REPORT")
-        report.append("=" * 50)
-        report.append(f"\nModel Type: Random Forest Classifier")
-        report.append(f"Training Samples: {len(X_train)}")
-        report.append(f"Test Samples: {len(X_test)}")
-        report.append(f"Number of Features: {len(feature_names)}")
-        report.append(f"Model Accuracy: {model.score(X_test, y_test):.2%}")
+        from lime.lime_tabular import LimeTabularExplainer
         
-        # Add feature importance
-        report.append("\n" + "=" * 50)
-        report.append("FEATURE IMPORTANCE RANKING")
-        report.append("=" * 50)
+        # Create LIME explainer
+        explainer = LimeTabularExplainer(
+            X_train.values,
+            feature_names=feature_names,
+            class_names=[str(i) for i in range(len(np.unique(y_train)))],
+            mode='classification',
+            random_state=42
+        )
         
-        feature_imp = model.feature_importances_
-        importance_data = [(feature_names[i], feature_imp[i]) for i in range(len(feature_names))]
-        importance_data.sort(key=lambda x: x[1], reverse=True)
+        # Get a few instances to explain
+        num_instances = min(5, len(X_test))
+        lime_explanations = []
         
-        for i, (feature, importance) in enumerate(importance_data, 1):
-            report.append(f"{i}. {feature}: {importance:.4f}")
+        for i in range(num_instances):
+            instance = X_test.iloc[i].values
+            exp = explainer.explain_instance(
+                instance,
+                model.predict_proba,
+                num_features=len(feature_names)
+            )
+            
+            # Get feature importance from LIME
+            lime_weights = exp.as_list()
+            lime_explanations.append({
+                'instance_idx': i,
+                'prediction': int(model.predict([instance])[0]),
+                'features': [{'feature': feat, 'weight': float(weight)} for feat, weight in lime_weights]
+            })
         
-        report.append("\n" + "=" * 50)
+        # Calculate average feature importance across instances
+        feature_importance = {}
+        for feat in feature_names:
+            feature_importance[feat] = 0
         
-        # Create response
-        report_text = "\n".join(report)
+        for exp in lime_explanations:
+            for item in exp['features']:
+                # Extract feature name from LIME format (removes comparison operators)
+                feat_name = item['feature'].split()[0]
+                if feat_name in feature_importance:
+                    feature_importance[feat_name] += abs(item['weight'])
+        
+        # Normalize and sort
+        total = sum(feature_importance.values())
+        if total > 0:
+            feature_importance = {k: v/total for k, v in feature_importance.items()}
+        
+        importance_data = [
+            {'feature': k, 'importance': float(v)}
+            for k, v in sorted(feature_importance.items(), key=lambda x: x[1], reverse=True)
+        ]
         
         return jsonify({
             'success': True,
-            'report': report_text,
-            'filename': 'model_analysis_report.txt'
+            'feature_importance': importance_data,
+            'sample_explanations': lime_explanations[:3],
+            'n_instances_explained': num_instances
         })
     
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/explain_instance_lime', methods=['POST'])
+def explain_instance_lime():
+    """Generate LIME explanation for a single instance"""
+    global model, X_train, X_test, y_train, feature_names
+    
+    if model is None:
+        return jsonify({'success': False, 'error': 'No model trained'}), 400
+    
+    try:
+        from lime.lime_tabular import LimeTabularExplainer
+        
+        data = request.get_json()
+        instance_idx = int(data.get('instance_idx', 0))
+        
+        if instance_idx >= len(X_test):
+            return jsonify({
+                'success': False,
+                'error': f'Instance index out of range. Max: {len(X_test)-1}'
+            }), 400
+        
+        # Create LIME explainer
+        explainer = LimeTabularExplainer(
+            X_train.values,
+            feature_names=feature_names,
+            class_names=[str(i) for i in range(len(np.unique(y_train)))],
+            mode='classification',
+            random_state=42
+        )
+        
+        # Get instance and explain
+        instance = X_test.iloc[instance_idx].values
+        exp = explainer.explain_instance(
+            instance,
+            model.predict_proba,
+            num_features=len(feature_names)
+        )
+        
+        # Get prediction
+        prediction = int(model.predict([instance])[0])
+        prediction_proba = model.predict_proba([instance])[0]
+        
+        # Get LIME weights
+        lime_weights = exp.as_list()
+        explanation_data = [
+            {'feature': feat, 'weight': float(weight)}
+            for feat, weight in lime_weights
+        ]
+        
+        # Create visualization
+        fig = exp.as_pyplot_figure()
+        fig.tight_layout()
+        
+        # Convert to base64
+        img_buffer = io.BytesIO()
+        fig.savefig(img_buffer, format='png', bbox_inches='tight')
+        img_buffer.seek(0)
+        img_str = base64.b64encode(img_buffer.read()).decode()
+        plt.close(fig)
+        
+        return jsonify({
+            'success': True,
+            'plot_image': img_str,
+            'prediction': prediction,
+            'prediction_proba': prediction_proba.tolist(),
+            'explanation': explanation_data,
+            'instance_data': X_test.iloc[instance_idx].to_dict()
+        })
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+@app.route('/download_results', methods=['POST'])
+def download_results():
+    """Generate and return analysis report"""
+    global model, X_train, X_test, y_train, y_test, feature_names, dataset_info
+    
+    if model is None:
+        return jsonify({'success': False, 'error': 'No model trained'}), 400
+    
+    try:
+        from datetime import datetime
+        
+        # Generate report content
+        report = f"""SP-105 AIML EXPLAINER - ANALYSIS REPORT
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+================================================
+
+MODEL INFORMATION:
+- Model Type: Random Forest Classifier
+- Training Samples: {len(X_train)}
+- Test Samples: {len(X_test)}
+- Number of Features: {len(feature_names)}
+- Model Accuracy: {model.score(X_test, y_test):.4f}
+
+FEATURES:
+{', '.join(feature_names)}
+
+DATASET INFORMATION:
+"""
+        if dataset_info:
+            report += f"- Filename: {dataset_info.get('filename', 'N/A')}\n"
+            report += f"- Total Rows: {dataset_info.get('n_rows', 'N/A')}\n"
+            report += f"- Total Columns: {dataset_info.get('n_columns', 'N/A')}\n"
+        else:
+            report += "- Sample Dataset: Iris\n"
+        
+        report += "\n================================================\n"
+        report += "This report was generated by SP-105 AIML Explainer\n"
+        report += "Kennesaw State University - Fall 2025\n"
+        
+        filename = f"analysis_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        
+        return jsonify({
+            'success': True,
+            'report': report,
+            'filename': filename
+        })
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
