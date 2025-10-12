@@ -426,55 +426,55 @@ def generate_lime():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
     
-    @app.route('/generate_waterfall', methods=['POST'])
-    def generate_waterfall():
-        """Generate SHAP waterfall plot for single instance"""
-        global model, X_test, feature_names
+@app.route('/generate_waterfall', methods=['POST'])
+def generate_waterfall():
+    """Generate SHAP waterfall plot for single instance"""
+    global model, X_test, feature_names
+    
+    if model is None:
+        return jsonify({'success': False, 'error': 'No model trained'}), 400
+    
+    try:
+        data = request.get_json()
+        instance_idx = int(data.get('instance_idx', 0))
         
-        if model is None:
-            return jsonify({'success': False, 'error': 'No model trained'}), 400
-        
-        try:
-            data = request.get_json()
-            instance_idx = int(data.get('instance_idx', 0))
-            
-            if instance_idx >= len(X_test):
-                return jsonify({
-                    'success': False,
-                    'error': f'Instance index out of range. Max: {len(X_test)-1}'
-                }), 400
-            
-            instance = X_test.iloc[instance_idx:instance_idx+1]
-            
-            # Create explainer
-            explainer = shap.TreeExplainer(model)
-            shap_values = explainer(instance)
-            
-            # Generate waterfall plot
-            plt.figure(figsize=(10, 6))
-            shap.plots.waterfall(shap_values[0], show=False)
-            
-            # Convert to base64
-            img_buffer = io.BytesIO()
-            plt.savefig(img_buffer, format='png', bbox_inches='tight', dpi=100)
-            img_buffer.seek(0)
-            img_str = base64.b64encode(img_buffer.read()).decode()
-            plt.close()
-            
-            # Get prediction
-            prediction = model.predict(instance)[0]
-            prediction_proba = model.predict_proba(instance)[0]
-            
+        if instance_idx >= len(X_test):
             return jsonify({
-                'success': True,
-                'plot_image': img_str,
-                'prediction': int(prediction),
-                'prediction_proba': prediction_proba.tolist(),
-                'instance_idx': instance_idx
-            })
+                'success': False,
+                'error': f'Instance index out of range. Max: {len(X_test)-1}'
+            }), 400
         
-        except Exception as e:
-            return jsonify({'success': False, 'error': str(e)}), 500
+        instance = X_test.iloc[instance_idx:instance_idx+1]
+        
+        # Create explainer
+        explainer = shap.TreeExplainer(model)
+        shap_values = explainer(instance)
+        
+        # Generate waterfall plot
+        plt.figure(figsize=(10, 6))
+        shap.plots.waterfall(shap_values[0], show=False)
+        
+        # Convert to base64
+        img_buffer = io.BytesIO()
+        plt.savefig(img_buffer, format='png', bbox_inches='tight', dpi=100)
+        img_buffer.seek(0)
+        img_str = base64.b64encode(img_buffer.read()).decode()
+        plt.close()
+        
+        # Get prediction
+        prediction = model.predict(instance)[0]
+        prediction_proba = model.predict_proba(instance)[0]
+        
+        return jsonify({
+            'success': True,
+            'plot_image': img_str,
+            'prediction': int(prediction),
+            'prediction_proba': prediction_proba.tolist(),
+            'instance_idx': instance_idx
+        })
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/explain_instance_lime', methods=['POST'])
 def explain_instance_lime():

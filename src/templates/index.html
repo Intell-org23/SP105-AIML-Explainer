@@ -134,13 +134,11 @@
             </div>
         </div>
 
-    <!-- Step 3: Explain Single Instance -->
+        <!-- Step 3: Explain Single Instance -->
         <div class="card">
             <div class="card-body">
                 <h3 class="card-title">🎯 Step 3: Explain Single Prediction (SHAP)</h3>
-                <p class="text-muted">See SHAP force plot for individual prediction</p>
-                <h3 class="card-title">🎯 Step 3: Explain Single Prediction</h3>
-                <p class="text-muted">See detailed explanations for individual predictions</p>
+                <p class="text-muted">See detailed SHAP explanations for individual predictions</p>
                 
                 <div class="row align-items-center">
                     <div class="col-md-6">
@@ -148,7 +146,6 @@
                         <input type="number" class="form-control" id="instanceIdx" min="0" max="29" value="0">
                     </div>
                     <div class="col-md-6">
-                        <button id="instanceBtn" class="btn btn-custom mt-3" disabled>Explain with SHAP</button>
                         <button id="instanceBtn" class="btn btn-custom mt-3" disabled>Force Plot</button>
                         <button id="waterfallBtn" class="btn btn-custom mt-3 ms-2" disabled>Waterfall Plot</button>
                     </div>
