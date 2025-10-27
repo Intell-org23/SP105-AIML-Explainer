@@ -241,6 +241,68 @@ def train_model():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/get_performance_metrics', methods=['POST'])
+def get_performance_metrics():
+    """Get detailed performance metrics for the trained model"""
+    global model, X_test, y_test, feature_names
+    
+    if model is None:
+        return jsonify({'success': False, 'error': 'No model trained'}), 400
+    
+    try:
+        from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
+        import seaborn as sns
+        
+        # Get predictions
+        y_pred = model.predict(X_test)
+        
+        # Calculate metrics
+        accuracy = accuracy_score(y_test, y_pred)
+        conf_matrix = confusion_matrix(y_test, y_pred)
+        class_report = classification_report(y_test, y_pred, output_dict=True)
+        
+        # Generate confusion matrix heatmap
+        plt.figure(figsize=(8, 6))
+        sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', 
+                    xticklabels=range(len(np.unique(y_test))),
+                    yticklabels=range(len(np.unique(y_test))))
+        plt.title('Confusion Matrix')
+        plt.ylabel('Actual')
+        plt.xlabel('Predicted')
+        
+        # Convert to base64
+        img_buffer = io.BytesIO()
+        plt.savefig(img_buffer, format='png', bbox_inches='tight', dpi=100)
+        img_buffer.seek(0)
+        img_str = base64.b64encode(img_buffer.read()).decode()
+        plt.close()
+        
+        # Format classification report for display
+        metrics_by_class = {}
+        for class_label, metrics in class_report.items():
+            if class_label not in ['accuracy', 'macro avg', 'weighted avg']:
+                metrics_by_class[f'Class {class_label}'] = {
+                    'precision': f"{metrics['precision']:.3f}",
+                    'recall': f"{metrics['recall']:.3f}",
+                    'f1-score': f"{metrics['f1-score']:.3f}",
+                    'support': int(metrics['support'])
+                }
+        
+        return jsonify({
+            'success': True,
+            'confusion_matrix_img': img_str,
+            'accuracy': float(accuracy),
+            'metrics_by_class': metrics_by_class,
+            'macro_avg': {
+                'precision': f"{class_report['macro avg']['precision']:.3f}",
+                'recall': f"{class_report['macro avg']['recall']:.3f}",
+                'f1-score': f"{class_report['macro avg']['f1-score']:.3f}"
+            }
+        })
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/generate_shap', methods=['POST'])
 def generate_shap():
     """Generate SHAP explanations"""

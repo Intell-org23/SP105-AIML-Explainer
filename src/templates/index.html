@@ -106,17 +106,19 @@
             </div>
         </div>
 
-        <!-- Step 1: Train Model -->
+<!-- Step 1: Train Model -->
         <div class="card">
             <div class="card-body">
                 <h3 class="card-title">📊 Step 1: Train Model</h3>
                 <p class="text-muted">Train a Random Forest classifier on the selected dataset</p>
                 <button id="trainBtn" class="btn btn-custom">Train Model</button>
+                <button id="metricsBtn" class="btn btn-custom ms-2" disabled style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">View Performance Metrics</button>
                 <div id="trainLoading" class="loading mt-3">
                     <div class="spinner-border text-primary" role="status"></div>
                     <span class="ms-2">Training model...</span>
                 </div>
                 <div id="trainResult" class="mt-3"></div>
+                <div id="metricsResult" class="mt-3"></div>
             </div>
         </div>
 
@@ -173,7 +175,7 @@
             </div>
         </div>
 
-        <!-- Step 5: LIME Single Instance -->
+<!-- Step 5: LIME Single Instance -->
         <div class="card">
             <div class="card-body">
                 <h3 class="card-title">🎨 Step 5: Explain Single Prediction (LIME)</h3>
@@ -194,8 +196,6 @@
                 <div id="limeInstanceResult" class="mt-3"></div>
             </div>
         </div>
-            </div>
-        </div>
 
         <!-- Step 6: Download Results -->
         <div class="card">
@@ -210,6 +210,7 @@
                 <div id="downloadResult" class="mt-3"></div>
             </div>
         </div>
+
         <!-- Step 7: Clear All -->
         <div class="card">
             <div class="card-body">
@@ -221,8 +222,7 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>    <script>
         let uploadedDatasetInfo = null;
         let isCustomDataset = false;
 
@@ -352,6 +352,7 @@
                     document.getElementById('downloadBtn').disabled = false;
                     document.getElementById('waterfallBtn').disabled = false;
                     document.getElementById('downloadBtn').disabled = false; 
+                    document.getElementById('metricsBtn').disabled = false; 
                 } else {
                     result.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
                 }
@@ -359,6 +360,83 @@
                 result.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
             } finally {
                 loading.style.display = 'none';
+                btn.disabled = false;
+            }
+        });
+
+        // View Performance Metrics
+        document.getElementById('metricsBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('metricsBtn');
+            const result = document.getElementById('metricsResult');
+            
+            btn.disabled = true;
+            result.innerHTML = '<div class="spinner-border text-primary" role="status"></div><span class="ms-2">Calculating metrics...</span>';
+            
+            try {
+                const response = await fetch('/get_performance_metrics', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Build metrics table
+                    let metricsHTML = `
+                        <div class="alert alert-info">
+                            <h5>📈 Model Performance Metrics</h5>
+                            <p><strong>Overall Accuracy:</strong> ${(data.accuracy * 100).toFixed(2)}%</p>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Classification Report:</h6>
+                                <table class="table table-sm table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Class</th>
+                                            <th>Precision</th>
+                                            <th>Recall</th>
+                                            <th>F1-Score</th>
+                                            <th>Support</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
+                    
+                    for (const [className, metrics] of Object.entries(data.metrics_by_class)) {
+                        metricsHTML += `
+                            <tr>
+                                <td><strong>${className}</strong></td>
+                                <td>${metrics.precision}</td>
+                                <td>${metrics.recall}</td>
+                                <td>${metrics['f1-score']}</td>
+                                <td>${metrics.support}</td>
+                            </tr>
+                        `;
+                    }
+                    
+                    metricsHTML += `
+                                        <tr class="table-active">
+                                            <td><strong>Macro Avg</strong></td>
+                                            <td>${data.macro_avg.precision}</td>
+                                            <td>${data.macro_avg.recall}</td>
+                                            <td>${data.macro_avg['f1-score']}</td>
+                                            <td>-</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Confusion Matrix:</h6>
+                                <img src="data:image/png;base64,${data.confusion_matrix_img}" class="result-img" alt="Confusion Matrix">
+                            </div>
+                        </div>
+                    `;
+                    
+                    result.innerHTML = metricsHTML;
+                } else {
+                    result.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            } finally {
                 btn.disabled = false;
             }
         });
@@ -655,6 +733,7 @@
                 document.getElementById('limeResult').innerHTML = '';
                 document.getElementById('limeInstanceResult').innerHTML = '';
                 document.getElementById('downloadResult').innerHTML = '';
+                document.getElementById('metricsResult').innerHTML = '';
                 
                 // Reset file input
                 document.getElementById('fileInput').value = '';
@@ -682,6 +761,7 @@
                 document.getElementById('limeBtn').disabled = true;
                 document.getElementById('limeInstanceBtn').disabled = true;
                 document.getElementById('downloadBtn').disabled = true;
+                document.getElementById('metricsBtn').disabled = true; 
                 
                 // Show success message
                 result.innerHTML = `
