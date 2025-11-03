@@ -2,18 +2,14 @@
 Flask==3.0.0
 Werkzeug==3.0.1
 
-# Database (comment out if not using yet)
-# psycopg2-binary==2.9.9
-# SQLAlchemy==2.0.23
-
 # Machine Learning
 scikit-learn==1.4.0
 numpy==1.26.3
-pandas==2.1.4
+pandas>=2.2.0 
 xgboost==2.0.3
 
 # Model Interpretability
-shap==0.44.1
+shap==0.41.0
 lime==0.2.0.1
 
 # Data Visualization
@@ -23,13 +19,4 @@ plotly==5.18.0
 
 # Utility Libraries
 python-dotenv==1.0.0
-
-# Development and Testing (optional for now)
-# pytest==7.4.4
-# pytest-cov==4.1.0
-
-# Security (comment out if not using yet)
-# bcrypt==4.1.2
-
-# File Handling
 Pillow==10.2.0

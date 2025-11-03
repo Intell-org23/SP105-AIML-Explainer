@@ -35,6 +35,7 @@ y_test = None
 feature_names = None
 dataset_info = None
 label_encoder = None
+training_history = []
 
 def allowed_file(filename):
     """Check if file extension is allowed"""
@@ -316,27 +317,56 @@ def generate_shap():
         explainer = shap.TreeExplainer(model)
         shap_values = explainer.shap_values(X_test)
         
-        # Handle multi-class case
+        # Handle multi-class case - ROBUST FIX
         if isinstance(shap_values, list):
+            # Multi-class: use first class for visualization
             shap_values_for_plot = shap_values[0]
         else:
             shap_values_for_plot = shap_values
         
+        # Ensure we're using the right number of features
+        n_features = X_test.shape[1]
+        
         # Generate summary plot
         plt.figure(figsize=(10, 6))
-        shap.summary_plot(shap_values_for_plot, X_test, feature_names=feature_names, show=False)
+        shap.summary_plot(shap_values_for_plot, X_test, feature_names=feature_names, show=False, max_display=n_features)
         
         # Convert to base64
         img_buffer = io.BytesIO()
-        plt.savefig(img_buffer, format='png', bbox_inches='tight')
+        plt.savefig(img_buffer, format='png', bbox_inches='tight', dpi=100)
         img_buffer.seek(0)
         img_str = base64.b64encode(img_buffer.read()).decode()
         plt.close()
         
-        # Calculate feature importance
-        feature_importance = np.abs(shap_values_for_plot).mean(axis=0)
+        # Calculate feature importance - COMPLETELY REWRITTEN FOR ROBUSTNESS
+        if isinstance(shap_values, list):
+            # Multi-class case
+            # Get absolute SHAP values for each class
+            all_class_importances = []
+            for class_shap_values in shap_values:
+                # Mean absolute SHAP value per feature for this class
+                class_importance = np.abs(class_shap_values).mean(axis=0)
+                all_class_importances.append(class_importance)
+            
+            # Average across all classes
+            feature_importance = np.array(all_class_importances).mean(axis=0)
+        else:
+            # Binary or regression case
+            feature_importance = np.abs(shap_values_for_plot).mean(axis=0)
+        
+        # Ensure we have the right shape
+        if feature_importance.ndim > 1:
+            feature_importance = feature_importance.flatten()
+        
+        # Ensure feature importance matches feature names
+        if len(feature_importance) > len(feature_names):
+            feature_importance = feature_importance[:len(feature_names)]
+        elif len(feature_importance) < len(feature_names):
+            # Pad with zeros if somehow we have fewer
+            feature_importance = np.pad(feature_importance, (0, len(feature_names) - len(feature_importance)))
+        
         importance_data = [
-            {'feature': feature_names[i], 'importance': float(feature_importance[i])}
+            {'feature': str(feature_names[i]), 'importance': float(feature_importance[i])}
             for i in range(len(feature_names))
         ]
         importance_data.sort(key=lambda x: x['importance'], reverse=True)
@@ -349,6 +379,8 @@ def generate_shap():
         })
     
     except Exception as e:
+        import traceback
+        traceback.print_exc()  # This will help debug if there are still errors
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/explain_instance', methods=['POST'])
@@ -371,32 +403,24 @@ def explain_instance():
         
         instance = X_test.iloc[instance_idx:instance_idx+1]
         
-        # Create explainer
+        # Create explainer using new API
         explainer = shap.TreeExplainer(model)
-        shap_values = explainer.shap_values(instance)
+        shap_values_obj = explainer(instance)  # Returns Explanation object
+        
+        # Generate force plot using new API (v0.20+)
+        plt.figure(figsize=(12, 4))
         
         # Handle multi-class
-        if isinstance(shap_values, list):
-            shap_values_single = shap_values[0][0]
-            expected_value = explainer.expected_value[0]
+        if hasattr(shap_values_obj, 'values') and len(shap_values_obj.values.shape) > 2:
+            # Multi-class case - plot first class
+            shap.plots.force(shap_values_obj[0, :, 0], matplotlib=True, show=False)
         else:
-            shap_values_single = shap_values[0]
-            expected_value = explainer.expected_value
-        
-        # Generate force plot
-        plt.figure(figsize=(12, 4))
-        shap.force_plot(
-            expected_value,
-            shap_values_single,
-            instance,
-            feature_names=feature_names,
-            matplotlib=True,
-            show=False
-        )
+            # Binary or single output
+            shap.plots.force(shap_values_obj[0], matplotlib=True, show=False)
         
         # Convert to base64
         img_buffer = io.BytesIO()
-        plt.savefig(img_buffer, format='png', bbox_inches='tight')
+        plt.savefig(img_buffer, format='png', bbox_inches='tight', dpi=100)
         img_buffer.seek(0)
         img_str = base64.b64encode(img_buffer.read()).decode()
         plt.close()
@@ -414,6 +438,8 @@ def explain_instance():
         })
     
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/generate_lime', methods=['POST'])
@@ -510,11 +536,16 @@ def generate_waterfall():
         
         # Create explainer
         explainer = shap.TreeExplainer(model)
-        shap_values = explainer(instance)
+        shap_values = explainer(instance)  # This returns an Explanation object
         
-        # Generate waterfall plot
+        # FIX: Handle multi-class waterfall
         plt.figure(figsize=(10, 6))
-        shap.plots.waterfall(shap_values[0], show=False)
+        if hasattr(shap_values, 'values') and len(shap_values.values.shape) > 2:
+            # Multi-class case - plot first class
+            shap.plots.waterfall(shap_values[0, :, 0], show=False)
+        else:
+            # Binary or single output
+            shap.plots.waterfall(shap_values[0], show=False)
         
         # Convert to base64
         img_buffer = io.BytesIO()
