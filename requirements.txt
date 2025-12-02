@@ -1,6 +1,22 @@
-Flask==2.3.3
-scikit-learn==1.2.2
-numpy==1.23.5
-pandas==1.5.3
-matplotlib==3.6.3
+# Web Framework
+Flask==3.0.0
+Werkzeug==3.0.1
+
+# Machine Learning
+scikit-learn==1.4.0
+numpy==1.26.3
+pandas>=2.2.0 
+xgboost==2.0.3
+
+# Model Interpretability
+shap==0.41.0
+lime==0.2.0.1
+
+# Data Visualization
+matplotlib==3.8.2
+seaborn==0.13.1
+plotly==5.18.0
+
+# Utility Libraries
 python-dotenv==1.0.0
+Pillow==10.2.0
