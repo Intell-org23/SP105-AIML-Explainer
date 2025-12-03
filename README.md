@@ -38,10 +38,10 @@ python -m venv venv
 [Data set trial result](<Files/trial with data.pdf>)
 
 
-### 📋 Planned
+### ✅ Completed
 - LIME integration
 - Model upload capability
-- User authentication
+- Result download capability
 
 # Activate virtual environment
 # On Windows:
