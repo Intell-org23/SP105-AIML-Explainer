@@ -54,10 +54,6 @@ pip install -r requirements.txt
 
 # Set up environment variables
 cp .env.example .env
-# Edit .env file with your database credentials
-
-# Set up database
-python scripts/setup_db.py
 
 # Run development server
 python src/app.py
